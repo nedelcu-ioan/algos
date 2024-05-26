@@ -1,0 +1,110 @@
+#! /usr/bin/env python3
+
+import json
+import pathlib
+import subprocess
+import os
+import pyfzf
+import time
+import shutil
+from argparse import ArgumentParser
+
+home_dir = pathlib.Path.home()
+config_path = home_dir.joinpath(".config/algos/config")
+config = {
+    "root_dir": os.getcwd()
+}
+
+def _load_config():
+    global config
+
+    if not config_path.is_file():
+        return
+
+    with config_path.open("r") as f:
+        config = json.load(f)
+
+
+def install(args):
+    if not config_path.parent.is_dir():
+        print("Creating config dir [%s]" % config_path.parent)
+        config_path.parent.mkdir()
+
+    if not config_path.is_file():
+        print("Creating config files [%s]" % config_path)
+        config_path.touch()
+    
+    with config_path.open("w") as f:
+        json.dump({
+            "root_dir": os.getcwd()
+        }, f)
+
+    with config_path.open("r") as f:
+        print(json.load(f))
+
+
+def afind(args):
+    files = list(pathlib.Path(config["root_dir"]).joinpath("template").iterdir())
+
+    fzf = pyfzf.FzfPrompt()
+    selected = fzf.prompt(files)[0]
+
+    with pathlib.Path(selected).open("r") as f:
+            print(f.read())
+
+
+def makra(args):
+    dst_dir = pathlib.Path(os.getcwd()).joinpath(args.problem_title)
+    dst_file = dst_dir.joinpath("a.cpp")
+    makra_file = pathlib.Path(config["root_dir"]).joinpath("makra.cpp")
+
+    dst_dir.mkdir()
+
+    with makra_file.open("r") as mf:
+        with dst_file.open("w") as dst_f:
+            dst_f.write(mf.read())
+
+def test(args):
+    input_files = [x.name for x in pathlib.Path(os.getcwd()).iterdir() if x.name.startswith("in")]
+   
+    for input_file in input_files:
+        print("input: {}".format(input_file))
+        start_time = time.perf_counter()
+        os.system("./a < {}".format(input_file))
+        print("Elapsed time {:10.4f}ms\n".format(1000 * (time.perf_counter() - start_time)))
+
+def get_parser():
+    parser = ArgumentParser()
+    parser.add_argument("-d", "--debug", action="store_true")
+    subparsers = parser.add_subparsers(required=True)
+
+    install_parser = subparsers.add_parser("install", help="Install algos script.")
+    install_parser.set_defaults(func=install)
+
+    afind_parser = subparsers.add_parser("afind", help="Find a template from archive.")
+    afind_parser.set_defaults(func=afind)
+
+    makra_parser = subparsers.add_parser("makra", help="Generate a new marka problem template.")
+    makra_parser.add_argument("problem_title")
+    makra_parser.set_defaults(func=makra)
+
+    test_parser = subparsers.add_parser("test", help="Test the code inside the current dir.")
+    test_parser.set_defaults(func=test)
+
+    return parser
+
+
+def main():
+    _load_config()
+    parser = get_parser()
+    args = parser.parse_args()
+    
+    if args.debug: 
+        print(config)
+    
+    args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
