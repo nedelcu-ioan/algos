@@ -31,7 +31,7 @@ sim dor(rge<c> d) {
   *this << "[";
   for (auto it = d.b; it != d.e; ++it)
     *this << ", " + 2 * (it == d.b) << *it;
-  ris << "]";  
+  ris << "]";
 }
 #else
 sim dor(const c&) { ris; }
@@ -44,8 +44,29 @@ signed main(int argc, char **argv, char **envp) {
     ios_base::sync_with_stdio(false);
     cin.tie(nullptr);
     cout.tie(nullptr);
+    debug() << imie("-- merge --");
+    
+    int n;
+    cin >> n;
+    vector<pair<int, int>> sequence(n);
 
-    int n; cin >> n;
-    while(n--) { cout << "Ana are mere" << endl; }
+    for (int i = 0 ; i < n ; ++i) {
+        int h; cin >> h;
+        sequence[i] = {h, i};
+    }
+
+    sort(all(sequence));
+
+    int ans = 1;
+
+    for (int i = 1 ; i < n ; ++i) {
+        if (sequence[i].second < sequence[i - 1].second) {
+            ans += 1;
+        }
+    }
+
+    cout << ans << endl;
+
+
     return 0x0;
 }

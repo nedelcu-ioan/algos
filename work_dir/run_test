@@ -1,3 +1,0 @@
-#!/bin/bash
-file=in$1
-time ./cmake-build-debug/a < $file
